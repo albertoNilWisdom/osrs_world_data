@@ -122,7 +122,7 @@ def consolidate_csvs(source_dir: str = "csv", output_file: str = "consolidated/c
 
                 file_rows = 0
                 for row in reader:
-                    writer.writerow(row + [epoch])
+                    writer.writerow([epoch] + row)
                     file_rows += 1
                     rows_appended += 1
 
