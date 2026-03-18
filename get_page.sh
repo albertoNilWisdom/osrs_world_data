@@ -6,6 +6,12 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
+# Ensure required directories exist (create if missing)
+for dir in csv html csv_old; do
+    mkdir -p "$dir"
+done
+
+
 URL="$1"
 HTML_FILE=$(date +"%Y%m%d%H%M%S").html
 
@@ -71,8 +77,40 @@ if [ -f "html_table_to_csv.py" ]; then
 else
     echo "Warning: 'html_table_to_csv.py' not found in current directory."
 fi
-mv *.csv csv/
-mv *.html html/
-rm html/*.html
+
+# Move CSVs (only if any exist—avoids mv error)
+if compgen -G "*.csv" > /dev/null 2>&1; then
+    mv *.csv csv/
+else
+    echo "No .csv files found to move."
+fi
+
+# Move HTMLs
+if compgen -G "*.html" > /dev/null 2>&1; then
+    mv *.html html/
+else
+    echo "No .html files found to move."
+fi
+
+# Remove all HTMLs from html/ (force to avoid error if empty)
+rm -f html/*.html || true
+
+# Run Python script (check existence first)
+if [[ ! -x "$(command -v python3)" ]]; then
+    echo "Error: python3 not found. Aborting." >&2
+    exit 1
+fi
+
+if [[ ! -f batch_csv_checker.py ]]; then
+    echo "Error: batch_csv_checker.py not found in current directory." >&2
+    exit 1
+fi
+
 python3 batch_csv_checker.py
-rm csv/*.csv
+
+# Move remaining CSVs to csv_old/ (only if any exist)
+if compgen -G "csv/*.csv" > /dev/null 2>&1; then
+    mv csv/*.csv csv_old/
+else
+    echo "No .csv files in csv/ directory to move."
+fi
